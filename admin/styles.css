@@ -1,0 +1,11 @@
+article {
+  font-family: Arial, sans-serif;
+  padding: 10px;
+  background: white;
+}
+h1 {
+  color: darkblue;
+}
+p {
+  color: gray;
+}

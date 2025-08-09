@@ -1,8 +1,8 @@
 backend:
   name: git-gateway
   branch: main # or your default branch
-  repo: your-github-username/your-repo-name # optional if using Netlify Identity
-  base_url: https://your-site.netlify.app # your deployed site URL
+  repo: Nallasivan30/decap-demo # optional if using Netlify Identity
+  base_url: https://celebrated-dolphin-9ef42f.netlify.app # your deployed site URL
   auth_endpoint: api/auth # this is the redirect path
 
 media_folder: "public/uploads"

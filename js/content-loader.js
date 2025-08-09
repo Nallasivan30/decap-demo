@@ -11,7 +11,7 @@ class GitHubContentLoader {
                 renderer: this.renderPosts.bind(this)
             },
             images: {
-                path: 'content/images',
+                path: 'images/uploads',
                 renderer: this.renderImages.bind(this)
             }
         };

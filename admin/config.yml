@@ -21,7 +21,7 @@ collections:
 
   - name: "images"
     label: "Images"
-    folder: "content/images"
+    folder: "images/uploads"
     create: true
     slug: "{{slug}}"
     fields:

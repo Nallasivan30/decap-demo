@@ -5,7 +5,139 @@ class GitHubContentLoader {
         this.branch = 'main';
         this.postsPath = 'content/posts';
         this.cache = new Map();
-        this.lastCheck = 0;
+        this.lastCheck = 0;this.collections = {
+            posts: {
+                path: 'content/posts',
+                renderer: this.renderPosts.bind(this)
+            },
+            images: {
+                path: 'content/images',
+                renderer: this.renderImages.bind(this)
+            }
+        };
+    }
+
+  async loadCollection(collectionName) {
+        const collection = this.collections[collectionName];
+        if (!collection) {
+            throw new Error(`Collection ${collectionName} not configured`);
+        }
+
+        try {
+            console.log(`Loading ${collectionName} from GitHub...`);
+            const url = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${collection.path}?ref=${this.branch}`;
+            
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                }
+            });
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error(`${collectionName} folder not found at ${collection.path}`);
+                }
+                throw new Error(`GitHub API error: ${response.status}`);
+            }
+            
+            const files = await response.json();
+            const fileArray = Array.isArray(files) ? files : [files];
+            
+            const validFiles = fileArray.filter(file => 
+                file.name && file.type === 'file'
+            );
+            
+            const items = await Promise.all(
+                validFiles.map(file => this.loadCollectionItem(collectionName, file))
+            );
+            
+            return items.filter(item => item !== null);
+        } catch (error) {
+            console.error(`Error loading ${collectionName}:`, error);
+            throw error;
+        }
+    }
+
+    async loadCollectionItem(collectionName, file) {
+        try {
+            // Cache check
+            const cacheKey = `${collectionName}-${file.sha}`;
+            if (this.cache.has(cacheKey)) {
+                return this.cache.get(cacheKey);
+            }
+
+            const response = await fetch(file.download_url);
+            if (!response.ok) throw new Error(`Failed to fetch ${file.name}`);
+            
+            const content = await response.text();
+            let item;
+
+            if (collectionName === 'posts') {
+                item = this.parseMarkdownFile(content, file.name);
+            } else if (collectionName === 'images') {
+                item = this.parseImageFile(content, file.name);
+            }
+
+            if (item) {
+                item.lastUpdated = new Date().toISOString();
+                this.cache.set(cacheKey, item);
+            }
+            
+            return item;
+        } catch (error) {
+            console.error(`Error loading ${file.name}:`, error);
+            return null;
+        }
+    }
+
+    // New method for image files
+    parseImageFile(content, filename) {
+        try {
+            const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
+            const match = content.match(frontMatterRegex);
+            
+            if (!match) {
+                console.warn(`No front matter found in ${filename}`);
+                return {
+                    title: filename.replace(/\.md$/, ''),
+                    publish: true,
+                    date: new Date().toISOString(),
+                    filename: filename,
+                    slug: filename.replace(/\.md$/, '')
+                };
+            }
+
+            const frontMatter = this.parseYAML(match[1]);
+            return {
+                ...frontMatter,
+                filename: filename,
+                slug: filename.replace(/\.md$/, '')
+            };
+        } catch (error) {
+            console.error(`Error parsing ${filename}:`, error);
+            return null;
+        }
+    }
+
+    // Image renderer
+    renderImages(images, containerId = 'images-container') {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const publishedImages = images
+            .filter(img => img.publish !== false)
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        container.innerHTML = publishedImages.map(img => `
+            <div class="image-card">
+                <h4>${this.escapeHtml(img.title)}</h4>
+                <img src="/${img.image}" alt="${img.description || ''}" loading="lazy">
+                ${img.description ? `<p>${this.escapeHtml(img.description)}</p>` : ''}
+                <div class="image-meta">
+                    <span>📅 ${this.formatDate(img.date)}</span>
+                </div>
+            </div>
+        `).join('');
     }
 
     async loadPosts() {
@@ -378,6 +510,24 @@ class GitHubContentLoader {
             this.renderPosts(posts);
             this.showRefreshNotification();
         } catch (error) {
+            this.showError(error.message);
+        }
+    }
+
+    async init() {
+        try {
+            // Load both collections
+            const [posts, images] = await Promise.all([
+                this.loadCollection('posts'),
+                this.loadCollection('images')
+            ]);
+            
+            this.renderPosts(posts);
+            this.renderImages(images);
+            
+            this.startAutoRefresh();
+        } catch (error) {
+            console.error('Initialization error:', error);
             this.showError(error.message);
         }
     }

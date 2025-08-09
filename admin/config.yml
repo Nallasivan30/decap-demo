@@ -18,3 +18,15 @@ collections:
       - { label: "Publish", name: "publish", widget: "boolean", default: true }
       - { label: "Date", name: "date", widget: "datetime" }
       - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "images"
+    label: "Images"
+    folder: "content/images"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Image", name: "image", widget: "image" }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Publish", name: "publish", widget: "boolean", default: true }
+      - { label: "Date", name: "date", widget: "datetime" }

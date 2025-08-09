@@ -1,7 +1,9 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: Nallasivan30/decap-demo
   branch: main
-
+  base_url: https://celebrated-dolphin-9ef42f.netlify.app
+  auth_endpoint: auth
 
 media_folder: "images/uploads"
 public_folder: "/images/uploads"

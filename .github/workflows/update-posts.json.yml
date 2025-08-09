@@ -1,32 +1,31 @@
-name: Update posts.json
+name: Auto-Update Content
 on:
   push:
     paths:
-      - 'content/posts/**'  # Triggers only when posts change
+      - 'content/posts/**'
 
 jobs:
-  generate-posts:
+  process-content:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for git push later
+          fetch-depth: 0  # Required for git push
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install gray-matter
-
       - name: Generate posts.json
-        run: node .github/scripts/generate-posts.js
-
-      - name: Commit and push changes
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add posts.json
-          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update posts.json"
-          git push
+          npm install gray-matter
+          node .github/scripts/generate-posts.js
+
+      - name: Trigger Netlify Build
+        uses: nwtgck/actions-netlify@v2
+        with:
+          publish-dir: './'
+          production-branch: 'main'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}

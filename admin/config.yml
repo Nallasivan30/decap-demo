@@ -1,20 +1,19 @@
 backend:
-  name: git-gateway
-  branch: main # or your default branch
-  repo: Nallasivan30/decap-demo # optional if using Netlify Identity
-  base_url: https://celebrated-dolphin-9ef42f.netlify.app # your deployed site URL
-  auth_endpoint: api/auth # this is the redirect path
+  name: github
+  repo: Nallasivan30/decap-demo # Your repo path
+  branch: main
+  site_domain: celebrated-dolphin-9ef42f.netlify.app # Changed from base_url
 
-media_folder: "public/uploads"
-public_folder: "/uploads"
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
 
 collections:
-  - name: "blog"
-    label: "Blog"
-    folder: "content/blog"
+  - name: "posts"
+    label: "Posts"
+    folder: "content/posts"
     create: true
-    slug: "{{slug}}"
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
       - { label: "Title", name: "title", widget: "string" }
-      - { label: "Publish Date", name: "date", widget: "datetime" }
+      - { label: "Date", name: "date", widget: "datetime" }
       - { label: "Body", name: "body", widget: "markdown" }

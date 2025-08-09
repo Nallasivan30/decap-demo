@@ -1,36 +1,53 @@
-[
-  {
-    "slug": "2025-08-09-hello",
-    "metadata": {
-      "title": "Hello from Gofillip",
-      "date": "2025-08-09T00:00:00.000Z"
+{
+  "_generatedAt": 1754734591225,
+  "posts": [
+    {
+      "slug": "2025-08-09-hello",
+      "metadata": {
+        "title": "Hello from Gofillip",
+        "date": "2025-08-09T00:00:00.000Z"
+      },
+      "body": "This is my first post created with Decap CMS.\n",
+      "lastUpdated": "2025-08-09T10:16:31.223Z"
     },
-    "body": "This is my first post created with Decap CMS.\n"
-  },
-  {
-    "slug": "2025-08-09-hi",
-    "metadata": {
-      "title": "Hi ",
-      "publish": true,
-      "date": "2025-08-09T07:34:00.000Z"
+    {
+      "slug": "2025-08-09-hi",
+      "metadata": {
+        "title": "Hi ",
+        "publish": true,
+        "date": "2025-08-09T07:34:00.000Z"
+      },
+      "body": "changed text\n",
+      "lastUpdated": "2025-08-09T10:16:31.224Z"
     },
-    "body": "changed text\n"
-  },
-  {
-    "slug": "2025-08-09-test-tilte",
-    "metadata": {
-      "title": "Test Tilte",
-      "publish": true,
-      "date": "2025-08-09T09:23:00.000Z"
+    {
+      "slug": "2025-08-09-test-2",
+      "metadata": {
+        "title": "Test 2",
+        "publish": true,
+        "date": "2025-08-09T10:01:00.000Z"
+      },
+      "body": "test message 2\n",
+      "lastUpdated": "2025-08-09T10:16:31.224Z"
     },
-    "body": "Test Body content\n"
-  },
-  {
-    "slug": "another-post",
-    "metadata": {
-      "title": "Second Post",
-      "date": "2025-08-10"
+    {
+      "slug": "2025-08-09-test-tilte",
+      "metadata": {
+        "title": "Test Tilte",
+        "publish": true,
+        "date": "2025-08-09T09:23:00.000Z"
+      },
+      "body": "Test Body content\n",
+      "lastUpdated": "2025-08-09T10:16:31.225Z"
     },
-    "body": "This is another post managed via the CMS.\n"
-  }
-]
+    {
+      "slug": "another-post",
+      "metadata": {
+        "title": "Second Post",
+        "date": "2025-08-10"
+      },
+      "body": "This is another post managed via the CMS.\n",
+      "lastUpdated": "2025-08-09T10:16:31.225Z"
+    }
+  ]
+}

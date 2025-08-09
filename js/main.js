@@ -1,38 +1,3 @@
-// let lastUpdate = 0;
-
-// async function loadPosts() {
-//   try {
-//     const res = await fetch(`/posts.json?t=${Date.now()}`);
-//     const { _generatedAt, posts } = await res.json();
-    
-//     if (_generatedAt > lastUpdate) {
-//       lastUpdate = _generatedAt;
-//       renderPosts(posts.sort((a,b) => 
-//         new Date(b.metadata.date) - new Date(a.metadata.date)
-//       ));
-//     }
-//   } catch(err) {
-//     console.error("Content update error:", err);
-//   }
-// }
-
-// function renderPosts(posts) {
-//   document.getElementById("post-container").innerHTML = posts.map(post => `
-//     <article>
-//       <h2>${post.metadata.title}</h2>
-//       <small>Updated: ${new Date(post.lastUpdated).toLocaleString()}</small>
-//       <div>${marked.parse(post.body)}</div>
-//     </article>
-//   `).join('');
-// }
-
-// // Initial load
-// loadPosts();
-
-// // Check for updates every 30 seconds
-// setInterval(loadPosts, 30000);
-
-
 
 document.addEventListener('DOMContentLoaded', async function() {
     const postsContainer = document.getElementById('posts-container');

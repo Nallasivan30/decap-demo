@@ -1,4 +1,4 @@
-<!doctype html>
+<!-- <!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -20,7 +20,7 @@
     <section>
       <h2>Latest Post</h2>
       <div id="post-container">
-        <!-- Posts loaded by script.js -->
+        
       </div>
     </section>
   </main>
@@ -33,5 +33,61 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
   <script src="script.js"></script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Blog - Decap CMS</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>My Blog</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/admin/" class="admin-btn">Manage Posts</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="intro">
+            <h2>Welcome to My Blog</h2>
+            <p>This blog is powered by Decap CMS. All posts are managed through a simple admin interface.</p>
+        </section>
+
+        <section class="posts">
+            <h2>Latest Posts</h2>
+            <div id="posts-container">
+                <div class="loading">Loading posts...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 My Blog. Powered by Decap CMS.</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        if (window.netlifyIdentity) {
+            window.netlifyIdentity.on("init", user => {
+                if (!user) {
+                    window.netlifyIdentity.on("login", () => {
+                        document.location.href = "/admin/";
+                    });
+                }
+            });
+        }
+    </script>
 </body>
 </html>

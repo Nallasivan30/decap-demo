@@ -1,11 +1,18 @@
-CMS.registerPreviewStyle("/admin/styles.css");
+// admin/preview.js
+CMS.registerPreviewTemplate("posts", PostPreview);
+CMS.registerPreviewStyle("/styles.css"); // Optional: Load your CSS for the preview
 
 function PostPreview({ entry, widgetFor }) {
-  return CMS.h("article", null,
-    CMS.h("h1", null, entry.getIn(["data", "title"])),
-    CMS.h("p", null, entry.getIn(["data", "date"])),
-    CMS.h("div", { dangerouslySetInnerHTML: { __html: widgetFor("body") } })
+  // Extract data from the CMS entry
+  const title = entry.getIn(["data", "title"]);
+  const date = entry.getIn(["data", "date"]);
+  const body = widgetFor("body"); // Renders the markdown as HTML
+
+  return (
+    `<article>
+      <h2>${title || "Untitled"}</h2>
+      <small>${date ? new Date(date).toLocaleDateString() : ""}</small>
+      <div>${body}</div>
+    </article>`
   );
 }
-
-CMS.registerPreviewTemplate("posts", PostPreview);

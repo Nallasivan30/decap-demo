@@ -11,9 +11,19 @@
     "slug": "2025-08-09-hi",
     "metadata": {
       "title": "Hi ",
+      "publish": true,
       "date": "2025-08-09T07:34:00.000Z"
     },
-    "body": "ffyryf fyfytut\n"
+    "body": "changed text\n"
+  },
+  {
+    "slug": "2025-08-09-test-tilte",
+    "metadata": {
+      "title": "Test Tilte",
+      "publish": true,
+      "date": "2025-08-09T09:23:00.000Z"
+    },
+    "body": "Test Body content\n"
   },
   {
     "slug": "another-post",

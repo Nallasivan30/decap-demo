@@ -1,6 +1,6 @@
 backend:
   name: github
-  repo: Nallasivan30/decap-demo # Your repo path
+  repo: Nallasivan30/decap-demo
   branch: main
   site_domain: celebrated-dolphin-9ef42f.netlify.app
 
@@ -21,14 +21,12 @@ collections:
 
   - name: "images"
     label: "Images"
-    folder: "images/uploads"
+    folder: "content/images"
     create: true
     slug: "{{slug}}"
     fields:
       - { label: "Title", name: "title", widget: "string" }
-      - { label: "Image Type", name: "imageType", widget: "select", options: ["upload", "url"] }
-      - { label: "Upload Image", name: "uploadImage", widget: "image", required: false, hint: "Use this for uploaded images" }
-      - { label: "External URL", name: "externalUrl", widget: "string", required: false, hint: "Use this for external image URLs (Cloudinary, etc.)" }
+      - { label: "Image File", name: "image", widget: "string", hint: "Filename from images/uploads folder" }
       - { label: "Description", name: "description", widget: "text", required: false }
       - { label: "Alt Text", name: "altText", widget: "string", required: false }
       - { label: "Publish", name: "publish", widget: "boolean", default: true }

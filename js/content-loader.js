@@ -10,7 +10,7 @@ class GitHubContentLoader {
                 renderer: this.renderPosts.bind(this)
             },
             images: {
-                path: 'images/uploads',
+                path: 'content/images',  
                 renderer: this.renderImages.bind(this)
             }
         };
@@ -19,7 +19,7 @@ class GitHubContentLoader {
     // ======================
     // Core Loading Methods
     // ======================
-    async init() {
+     async init() {
         console.log('Initializing GitHub content loader...');
         this.showLoading('posts-container');
         
@@ -239,15 +239,13 @@ class GitHubContentLoader {
         }
 
         container.innerHTML = publishedImages.map(img => {
-            const imageSrc = img.download_url || this.getImageSrc(img);
+            const imageSrc = this.getImageSrc(img);
             const altText = img.altText || img.description || img.title || 'Image';
-            const imageType = img.imageType || (img.download_url ? 'GitHub' : (imageSrc.startsWith('http') ? 'External URL' : 'Upload'));
 
             return `
                 <div class="image-card">
                     <div class="image-header">
-                        <h4>${this.escapeHtml(img.title)}</h4>
-                        <span class="image-type-badge ${imageType.toLowerCase().replace(' ', '-')}">${imageType}</span>
+                        <h3>${this.escapeHtml(img.title)}</h3>
                     </div>
                     ${imageSrc ? `
                         <div class="image-wrapper">
@@ -256,19 +254,23 @@ class GitHubContentLoader {
                                  loading="lazy"
                                  onerror="this.parentElement.innerHTML='<div class=\\"image-error\\">❌ Image not found: ${imageSrc}</div>'">
                         </div>
-                        <div class="image-path">
-                            <small>📁 ${img.path || imageSrc}</small>
-                        </div>
                     ` : this.getImageErrorHTML(img)}
-                    ${img.description ? `<p class="image-description">${this.escapeHtml(img.description)}</p>` : ''}
+                    ${img.description ? `<div class="image-description">${this.markdownToHtml(img.description)}</div>` : ''}
                     <div class="image-meta">
                         <span>📅 ${this.formatDate(img.date)}</span>
+                        <span class="image-filename">📄 ${img.filename}</span>
                     </div>
                 </div>
             `;
         }).join('');
         
         console.log(`Rendered ${publishedImages.length} images`);
+    }
+
+    getImageSrc(imageItem) {
+        if (!imageItem.image) return '';
+        // Always point to images/uploads folder for actual images
+        return `/images/uploads/${imageItem.image}`;
     }
 
     // ======================

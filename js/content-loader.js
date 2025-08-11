@@ -200,16 +200,9 @@ class GitHubContentLoader {
                                  loading="lazy"
                                  onerror="this.parentElement.innerHTML='<div class=\\"image-error\\">❌ Failed to load image</div>'">
                         </div>
-                        <div class="image-path">
-                            <small>📁 ${imageSrc}</small>
-                        </div>
                     ` : `
                         <div class="image-error">⚠️ No image source found</div>
                     `}
-                    ${img.description ? `<p class="image-description">${this.escapeHtml(img.description)}</p>` : ''}
-                    <div class="image-meta">
-                        <span>📅 ${this.formatDate(img.date)}</span>
-                    </div>
                 </div>
             `;
         }).join('');

@@ -27,22 +27,22 @@ class GitHubContentLoader {
             return imageData;
         }
         
-        // If it already starts with /images/uploads/, return as is
-        if (imageData.startsWith('/images/uploads/')) {
+        // If it already starts with /images/, return as is
+        if (imageData.startsWith('/images/')) {
             return imageData;
         }
         
-        // If it starts with images/uploads/, add leading slash
-        if (imageData.startsWith('images/uploads/')) {
+        // If it starts with images/, add leading slash
+        if (imageData.startsWith('images/')) {
             return `/${imageData}`;
         }
         
-        // If it starts with uploads/, add images prefix
-        if (imageData.startsWith('uploads/')) {
-            return `/images/${imageData}`;
+        // For GitHub content, we might have the full path from repo root
+        if (imageData.startsWith('content/') || imageData.startsWith('images/')) {
+            return `/${imageData}`;
         }
         
-        // If it's just a filename, prepend the full uploads path
+        // Default case - assume it's in the uploads folder
         return `/images/uploads/${imageData}`;
     }
 
@@ -86,7 +86,8 @@ class GitHubContentLoader {
             
             if (!response.ok) {
                 if (response.status === 404) {
-                    throw new Error(`${collectionName} folder not found at ${collection.path}`);
+                    console.warn(`${collectionName} folder not found at ${collection.path}`);
+                    return []; // Return empty array instead of throwing error
                 }
                 throw new Error(`GitHub API error: ${response.status}`);
             }
@@ -94,8 +95,9 @@ class GitHubContentLoader {
             const files = await response.json();
             const fileArray = Array.isArray(files) ? files : [files];
             
+            // For images, include all file types (not just markdown)
             const validFiles = fileArray.filter(file => 
-                file.name && file.type === 'file'
+                file.name && (collectionName === 'images' || file.type === 'file')
             );
             
             const items = await Promise.all(
@@ -117,24 +119,39 @@ class GitHubContentLoader {
                 return this.cache.get(cacheKey);
             }
 
-            const response = await fetch(file.download_url);
-            if (!response.ok) throw new Error(`Failed to fetch ${file.name}`);
-            
-            const content = await response.text();
-            let item;
-
-            if (collectionName === 'posts') {
-                item = this.parseMarkdownFile(content, file.name);
-            } else if (collectionName === 'images') {
-                item = this.parseImageFile(content, file.name);
+            // For images, we can use the download_url directly
+            if (collectionName === 'images') {
+                const imageItem = {
+                    title: file.name,
+                    filename: file.name,
+                    download_url: file.download_url,
+                    path: file.path,
+                    publish: true,
+                    date: new Date().toISOString(),
+                    // For images, we'll use the download_url as the source
+                    uploadImage: file.path // Use the full path from repo root
+                };
+                
+                this.cache.set(cacheKey, imageItem);
+                return imageItem;
             }
-
-            if (item) {
-                item.lastUpdated = new Date().toISOString();
-                this.cache.set(cacheKey, item);
+            // Rest of the method remains the same for posts
+            else if (collectionName === 'posts') {
+                const response = await fetch(file.download_url);
+                if (!response.ok) throw new Error(`Failed to fetch ${file.name}`);
+                
+                const content = await response.text();
+                const item = this.parseMarkdownFile(content, file.name);
+                
+                if (item) {
+                    item.lastUpdated = new Date().toISOString();
+                    this.cache.set(cacheKey, item);
+                }
+                
+                return item;
             }
             
-            return item;
+            return null;
         } catch (error) {
             console.error(`Error loading ${file.name}:`, error);
             return null;
@@ -186,26 +203,27 @@ class GitHubContentLoader {
             container.innerHTML = `
                 <div class="no-images">
                     <p>No images found yet. <a href="/admin/">Add your first image</a>!</p>
+                    <p><small>Make sure you have images in the <code>images/uploads</code> folder of your repository.</small></p>
                 </div>
             `;
             return;
         }
 
         container.innerHTML = publishedImages.map(img => {
-            const imageSrc = this.getImageSrc(img);
+            // For images loaded directly from GitHub, use the download_url
+            let imageSrc = img.download_url || this.getImageSrc(img);
             const altText = img.altText || img.description || img.title || 'Image';
-            const imageType = img.imageType || (imageSrc.startsWith('http') ? 'External URL' : 'Upload');
             
-            // Debug logging
-            console.log('Image item:', {
-                title: img.title,
-                image: img.image,
-                imageType: img.imageType,
-                uploadImage: img.uploadImage,
-                externalUrl: img.externalUrl,
-                resolvedSrc: imageSrc
-            });
+            // If we have a path but no download_url, construct a raw GitHub URL
+            if (!imageSrc && img.path) {
+                imageSrc = `https://api.github.com/repos/${this.owner}/${this.repo}/${this.branch}/${img.path}`;
+            }
             
+            // Determine image type for display
+            const imageType = img.imageType || 
+                            (img.download_url ? 'GitHub' : 
+                             (imageSrc.startsWith('http') ? 'External URL' : 'Upload'));
+
             return `
                 <div class="image-card">
                     <div class="image-header">
@@ -220,7 +238,7 @@ class GitHubContentLoader {
                                  onerror="this.parentElement.innerHTML='<div class=\\"image-error\\">❌ Image not found: ${imageSrc}</div>'">
                         </div>
                         <div class="image-path">
-                            <small>📁 ${imageSrc}</small>
+                            <small>📁 ${img.path || imageSrc}</small>
                         </div>
                     ` : `
                         <div class="image-error">

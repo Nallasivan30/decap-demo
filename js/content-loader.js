@@ -20,36 +20,42 @@ class GitHubContentLoader {
 
     // Helper method to resolve image path
     resolveImagePath(imageData) {
+        if (!imageData) return '';
+        
         // If it's an external URL (starts with http/https)
-        if (imageData && (imageData.startsWith('http://') || imageData.startsWith('https://'))) {
+        if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
             return imageData;
         }
         
-        // If it starts with a slash, it's already a full path
-        if (imageData && imageData.startsWith('/')) {
+        // If it already starts with /images/uploads/, return as is
+        if (imageData.startsWith('/images/uploads/')) {
             return imageData;
         }
         
-        // If it's just a filename, prepend the uploads path
-        if (imageData) {
-            return `/images/uploads/${imageData}`;
+        // If it starts with images/uploads/, add leading slash
+        if (imageData.startsWith('images/uploads/')) {
+            return `/${imageData}`;
         }
         
-        return '';
+        // If it starts with uploads/, add images prefix
+        if (imageData.startsWith('uploads/')) {
+            return `/images/${imageData}`;
+        }
+        
+        // If it's just a filename, prepend the full uploads path
+        return `/images/uploads/${imageData}`;
     }
 
     // Updated method to handle both upload and external URL images
     getImageSrc(imageItem) {
-        // Check if it's the new format with imageType
-        if (imageItem.imageType) {
-            if (imageItem.imageType === 'url' && imageItem.externalUrl) {
-                return imageItem.externalUrl;
-            } else if (imageItem.imageType === 'upload' && imageItem.uploadImage) {
-                return this.resolveImagePath(imageItem.uploadImage);
-            }
+        // Check new format with imageType
+        if (imageItem.imageType === 'url' && imageItem.externalUrl) {
+            return imageItem.externalUrl;
+        } else if (imageItem.imageType === 'upload' && imageItem.uploadImage) {
+            return this.resolveImagePath(imageItem.uploadImage);
         }
         
-        // Legacy support - check for 'image' field
+        // Legacy support - check for 'image' field (most common)
         if (imageItem.image) {
             return this.resolveImagePath(imageItem.image);
         }
@@ -164,10 +170,13 @@ class GitHubContentLoader {
         }
     }
 
-    // Updated renderImages method with better image handling
+    // Updated renderImages method with better image handling and debugging
     renderImages(images, containerId = 'images-container') {
         const container = document.getElementById(containerId);
-        if (!container) return;
+        if (!container) {
+            console.error(`Images container '${containerId}' not found`);
+            return;
+        }
 
         const publishedImages = images
             .filter(img => img.publish !== false)
@@ -187,6 +196,16 @@ class GitHubContentLoader {
             const altText = img.altText || img.description || img.title || 'Image';
             const imageType = img.imageType || (imageSrc.startsWith('http') ? 'External URL' : 'Upload');
             
+            // Debug logging
+            console.log('Image item:', {
+                title: img.title,
+                image: img.image,
+                imageType: img.imageType,
+                uploadImage: img.uploadImage,
+                externalUrl: img.externalUrl,
+                resolvedSrc: imageSrc
+            });
+            
             return `
                 <div class="image-card">
                     <div class="image-header">
@@ -198,14 +217,29 @@ class GitHubContentLoader {
                             <img src="${imageSrc}" 
                                  alt="${this.escapeHtml(altText)}" 
                                  loading="lazy"
-                                 onerror="this.parentElement.innerHTML='<div class=\\"image-error\\">❌ Failed to load image</div>'">
+                                 onerror="this.parentElement.innerHTML='<div class=\\"image-error\\">❌ Image not found: ${imageSrc}</div>'">
+                        </div>
+                        <div class="image-path">
+                            <small>📁 ${imageSrc}</small>
                         </div>
                     ` : `
-                        <div class="image-error">⚠️ No image source found</div>
+                        <div class="image-error">
+                            ⚠️ No image source found
+                            <details style="margin-top: 0.5rem;">
+                                <summary>Debug Info</summary>
+                                <pre style="font-size: 0.8rem; background: #f5f5f5; padding: 0.5rem; margin-top: 0.5rem;">${JSON.stringify(img, null, 2)}</pre>
+                            </details>
+                        </div>
                     `}
+                    ${img.description ? `<p class="image-description">${this.escapeHtml(img.description)}</p>` : ''}
+                    <div class="image-meta">
+                        <span>📅 ${this.formatDate(img.date)}</span>
+                    </div>
                 </div>
             `;
         }).join('');
+        
+        console.log(`Rendered ${publishedImages.length} images`);
     }
 
     // Enhanced markdown processing to handle images in posts

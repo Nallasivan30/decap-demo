@@ -51,7 +51,7 @@ class GitHubContentLoader {
             const url = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${collection.path}?ref=${this.branch}`;
             
             const response = await fetch(url, {
-                'Authorization': `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
+                // 'Authorization': `token ${process.env.GITHUB_TOKEN}`,
                 headers: {'Accept': 'application/vnd.github.v3+json'}
             });
             

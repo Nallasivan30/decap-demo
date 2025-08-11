@@ -5,7 +5,8 @@ class GitHubContentLoader {
         this.branch = 'main';
         this.postsPath = 'content/posts';
         this.cache = new Map();
-        this.lastCheck = 0;this.collections = {
+        this.lastCheck = 0;
+        this.collections = {
             posts: {
                 path: 'content/posts',
                 renderer: this.renderPosts.bind(this)
@@ -17,7 +18,51 @@ class GitHubContentLoader {
         };
     }
 
-  async loadCollection(collectionName) {
+    // Helper method to resolve image path
+    resolveImagePath(imageData) {
+        // If it's an external URL (starts with http/https)
+        if (imageData && (imageData.startsWith('http://') || imageData.startsWith('https://'))) {
+            return imageData;
+        }
+        
+        // If it starts with a slash, it's already a full path
+        if (imageData && imageData.startsWith('/')) {
+            return imageData;
+        }
+        
+        // If it's just a filename, prepend the uploads path
+        if (imageData) {
+            return `/images/uploads/${imageData}`;
+        }
+        
+        return '';
+    }
+
+    // Updated method to handle both upload and external URL images
+    getImageSrc(imageItem) {
+        // Check if it's the new format with imageType
+        if (imageItem.imageType) {
+            if (imageItem.imageType === 'url' && imageItem.externalUrl) {
+                return imageItem.externalUrl;
+            } else if (imageItem.imageType === 'upload' && imageItem.uploadImage) {
+                return this.resolveImagePath(imageItem.uploadImage);
+            }
+        }
+        
+        // Legacy support - check for 'image' field
+        if (imageItem.image) {
+            return this.resolveImagePath(imageItem.image);
+        }
+        
+        // Fallback for external URLs in legacy format
+        if (imageItem.externalUrl) {
+            return imageItem.externalUrl;
+        }
+        
+        return '';
+    }
+
+    async loadCollection(collectionName) {
         const collection = this.collections[collectionName];
         if (!collection) {
             throw new Error(`Collection ${collectionName} not configured`);
@@ -90,7 +135,7 @@ class GitHubContentLoader {
         }
     }
 
-    // New method for image files
+    // Updated parseImageFile method
     parseImageFile(content, filename) {
         try {
             const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
@@ -119,7 +164,7 @@ class GitHubContentLoader {
         }
     }
 
-    // Image renderer
+    // Updated renderImages method with better image handling
     renderImages(images, containerId = 'images-container') {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -128,16 +173,85 @@ class GitHubContentLoader {
             .filter(img => img.publish !== false)
             .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        container.innerHTML = publishedImages.map(img => `
-            <div class="image-card">
-                <h4>${this.escapeHtml(img.title)}</h4>
-                <img src="/${img.image}" alt="${img.description || ''}" loading="lazy">
-                ${img.description ? `<p>${this.escapeHtml(img.description)}</p>` : ''}
-                <div class="image-meta">
-                    <span>📅 ${this.formatDate(img.date)}</span>
+        if (publishedImages.length === 0) {
+            container.innerHTML = `
+                <div class="no-images">
+                    <p>No images found yet. <a href="/admin/">Add your first image</a>!</p>
                 </div>
-            </div>
-        `).join('');
+            `;
+            return;
+        }
+
+        container.innerHTML = publishedImages.map(img => {
+            const imageSrc = this.getImageSrc(img);
+            const altText = img.altText || img.description || img.title || 'Image';
+            const imageType = img.imageType || (imageSrc.startsWith('http') ? 'External URL' : 'Upload');
+            
+            return `
+                <div class="image-card">
+                    <div class="image-header">
+                        <h4>${this.escapeHtml(img.title)}</h4>
+                        <span class="image-type-badge ${imageType.toLowerCase().replace(' ', '-')}">${imageType}</span>
+                    </div>
+                    ${imageSrc ? `
+                        <div class="image-wrapper">
+                            <img src="${imageSrc}" 
+                                 alt="${this.escapeHtml(altText)}" 
+                                 loading="lazy"
+                                 onerror="this.parentElement.innerHTML='<div class=\\"image-error\\">❌ Failed to load image</div>'">
+                        </div>
+                        <div class="image-path">
+                            <small>📁 ${imageSrc}</small>
+                        </div>
+                    ` : `
+                        <div class="image-error">⚠️ No image source found</div>
+                    `}
+                    ${img.description ? `<p class="image-description">${this.escapeHtml(img.description)}</p>` : ''}
+                    <div class="image-meta">
+                        <span>📅 ${this.formatDate(img.date)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Enhanced markdown processing to handle images in posts
+    markdownToHtml(markdown) {
+        if (!markdown) return '';
+        
+        return markdown
+            // Process images with proper path resolution
+            .replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, (match, alt, src) => {
+                const resolvedSrc = this.resolveImagePath(src);
+                return `<img src="${resolvedSrc}" alt="${alt}" loading="lazy" style="max-width: 100%; height: auto;">`;
+            })
+            // Headers
+            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+            // Bold and italic
+            .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+            // Links
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
+            // Lists
+            .replace(/^\s*\d+\.\s+(.*$)/gim, '<li>$1</li>')
+            .replace(/^\s*[\-\*]\s+(.*$)/gim, '<li>$1</li>')
+            // Code blocks (basic)
+            .replace(/```([^`]*)```/gim, '<pre><code>$1</code></pre>')
+            .replace(/`([^`]*)`/gim, '<code>$1</code>')
+            // Paragraphs
+            .replace(/\n\n/gim, '</p><p>')
+            .replace(/^(?!<[h|l|p|c|i])/gim, '<p>')
+            .replace(/$/gim, '</p>')
+            // Clean up empty paragraphs
+            .replace(/<p><\/p>/gim, '')
+            .replace(/<p>(<h[1-6]>.*?<\/h[1-6]>)<\/p>/gim, '$1')
+            .replace(/<p>(<pre>.*?<\/pre>)<\/p>/gim, '$1')
+            .replace(/<p>(<img.*?>)<\/p>/gim, '$1')
+            // Wrap lists
+            .replace(/(<li>.*?<\/li>)/gims, '<ul>$1</ul>')
+            .replace(/<\/ul>\s*<ul>/gim, '');
     }
 
     async loadPosts() {
@@ -283,38 +397,6 @@ class GitHubContentLoader {
         return result;
     }
 
-    markdownToHtml(markdown) {
-        if (!markdown) return '';
-        
-        return markdown
-            // Headers
-            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-            .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-            // Bold and italic
-            .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-            // Links
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
-            // Lists
-            .replace(/^\s*\d+\.\s+(.*$)/gim, '<li>$1</li>')
-            .replace(/^\s*[\-\*]\s+(.*$)/gim, '<li>$1</li>')
-            // Code blocks (basic)
-            .replace(/```([^`]*)```/gim, '<pre><code>$1</code></pre>')
-            .replace(/`([^`]*)`/gim, '<code>$1</code>')
-            // Paragraphs
-            .replace(/\n\n/gim, '</p><p>')
-            .replace(/^(?!<[h|l|p|c])/gim, '<p>')
-            .replace(/$/gim, '</p>')
-            // Clean up empty paragraphs
-            .replace(/<p><\/p>/gim, '')
-            .replace(/<p>(<h[1-6]>.*?<\/h[1-6]>)<\/p>/gim, '$1')
-            .replace(/<p>(<pre>.*?<\/pre>)<\/p>/gim, '$1')
-            // Wrap lists
-            .replace(/(<li>.*?<\/li>)/gims, '<ul>$1</ul>')
-            .replace(/<\/ul>\s*<ul>/gim, '');
-    }
-
     renderPosts(posts, containerId = 'posts-container') {
         const container = document.getElementById(containerId);
         if (!container) {
@@ -397,14 +479,14 @@ class GitHubContentLoader {
         if (container) {
             container.innerHTML = `
                 <div class="error">
-                    <h3>⚠️ Error Loading Posts</h3>
+                    <h3>⚠️ Error Loading Content</h3>
                     <p>${message}</p>
                     <details>
                         <summary>Troubleshooting</summary>
                         <ul>
                             <li>Make sure your repository is public or you have proper access</li>
-                            <li>Check that the <code>content/posts</code> folder exists</li>
-                            <li>Verify your posts have proper front matter with <code>---</code></li>
+                            <li>Check that the required folders exist</li>
+                            <li>Verify your files have proper front matter with <code>---</code></li>
                             <li>Check browser console for detailed error messages</li>
                         </ul>
                     </details>
@@ -419,8 +501,8 @@ class GitHubContentLoader {
         if (container) {
             container.innerHTML = `
                 <div class="loading">
-                    <p>🔄 Loading posts from GitHub...</p>
-                    <small>Repository: ${this.owner}/${this.repo}/content/posts</small>
+                    <p>🔄 Loading content from GitHub...</p>
+                    <small>Repository: ${this.owner}/${this.repo}</small>
                 </div>
             `;
         }
@@ -432,9 +514,14 @@ class GitHubContentLoader {
         
         const refreshInterval = setInterval(async () => {
             try {
-                console.log('Auto-refreshing posts...');
-                const posts = await this.loadPosts();
+                console.log('Auto-refreshing content...');
+                const [posts, images] = await Promise.all([
+                    this.loadCollection('posts'),
+                    this.loadCollection('images')
+                ]);
+                
                 this.renderPosts(posts);
+                this.renderImages(images);
                 
                 // Show refresh notification
                 this.showRefreshNotification();
@@ -463,7 +550,7 @@ class GitHubContentLoader {
             z-index: 1000;
             transition: opacity 0.3s;
         `;
-        notification.textContent = '✓ Posts updated';
+        notification.textContent = '✓ Content updated';
         document.body.appendChild(notification);
 
         // Remove after 2 seconds
@@ -481,22 +568,27 @@ class GitHubContentLoader {
         }
     }
 
-    async init(containerId = 'posts-container') {
+    async init() {
         console.log('Initializing GitHub content loader...');
-        this.showLoading(containerId);
+        this.showLoading('posts-container');
         
         try {
-            const posts = await this.loadPosts();
-            this.renderPosts(posts, containerId);
+            // Load both collections
+            const [posts, images] = await Promise.all([
+                this.loadCollection('posts'),
+                this.loadCollection('images')
+            ]);
             
-            // Start auto-refresh every 30 seconds
-            this.startAutoRefresh(30000);
+            this.renderPosts(posts, 'posts-container');
+            this.renderImages(images, 'images-container');
+            
+            this.startAutoRefresh();
             
             console.log('✅ Content loader initialized successfully');
             return true;
         } catch (error) {
             console.error('❌ Initialization error:', error);
-            this.showError(error.message, containerId);
+            this.showError(error.message, 'posts-container');
             return false;
         }
     }
@@ -505,30 +597,18 @@ class GitHubContentLoader {
     async refresh() {
         console.log('Manual refresh triggered');
         try {
-            this.showLoading();
-            const posts = await this.loadPosts();
-            this.renderPosts(posts);
-            this.showRefreshNotification();
-        } catch (error) {
-            this.showError(error.message);
-        }
-    }
-
-    async init() {
-        try {
-            // Load both collections
+            this.showLoading('posts-container');
+            
             const [posts, images] = await Promise.all([
                 this.loadCollection('posts'),
                 this.loadCollection('images')
             ]);
             
-            this.renderPosts(posts);
-            this.renderImages(images);
-            
-            this.startAutoRefresh();
+            this.renderPosts(posts, 'posts-container');
+            this.renderImages(images, 'images-container');
+            this.showRefreshNotification();
         } catch (error) {
-            console.error('Initialization error:', error);
-            this.showError(error.message);
+            this.showError(error.message, 'posts-container');
         }
     }
 }
@@ -541,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add manual refresh button if desired
     const refreshButton = document.createElement('button');
-    refreshButton.innerHTML = '🔄 Refresh Posts';
+    refreshButton.innerHTML = '🔄 Refresh Content';
     refreshButton.style.cssText = `
         position: fixed;
         bottom: 20px;

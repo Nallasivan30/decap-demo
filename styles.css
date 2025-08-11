@@ -275,3 +275,115 @@ footer {
     font-size: 0.9rem;
     color: #888;
 }
+
+
+/* Image Container Styles */
+#images-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+/* Image Card Styles */
+.image-card {
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Image Header */
+.image-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.image-header h4 {
+    margin: 0;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+/* Image Type Badge */
+.image-type-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.image-type-badge.upload {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.image-type-badge.url,
+.image-type-badge.external-url {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+/* Image Wrapper */
+.image-wrapper {
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+}
+
+.image-wrapper img {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.image-wrapper img:hover {
+    transform: scale(1.02);
+}
+
+/* Image Path Display */
+.image-path {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #007bff;
+}
+
+.image-path small {
+    color: #6c757d;
+    font-family: 'Courier New', monospace;
+    word-break: break-all;
+}
+
+/* Image Description */
+.image-description {
+    margin-bottom: 1rem;
+    color: #555;
+    line-height: 1.5;
+}
+
+/* Image Meta */
+.image-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+    border-top: 1px solid #e9ecef;
+    padding-top: 0.75rem;
+}
